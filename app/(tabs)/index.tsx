@@ -1,116 +1,121 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-} from "react-native";
+import services from "@/services/services";
+import { useEffect, useState } from "react";
+import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Utils from "../utils/utils";
 
 const { width } = Dimensions.get("window");
 
 export default function Home() {
-  const cards = [
-    {
-      title: "Toplam Bakiye",
-      amount: "₺12,345.67",
-      change: "+5%",
-      icon: "💰",
-      bgColor: "#174e8cff",
-    },
-    {
-      title: "Toplam Harcama",
-      amount: "₺3,200",
-      change: "-2%",
-      icon: "🛒",
-      bgColor: "#790d06ff",
-    },
-    {
-      title: "Toplam Gelir",
-      amount: "₺15,500",
-      change: "+10%",
-      icon: "💳",
-      bgColor: "#125f15ff",
-    },
-  ];
+  const utils = new Utils();
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [activeIndex, setActiveIndex] = useState<number>(0);
+
+  const activeAccount = accounts[activeIndex];
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const payload = await utils.getTokenPayload<{
+          id: string;
+          email: string;
+          username: string;
+        }>();
+        if (!payload) return;
+
+        const fetchedAccounts =
+          await services.Accounts.getAccountsWithTransactions(payload.id);
+
+        setAccounts(fetchedAccounts);
+      } catch (err) {
+        console.error("Hata:", err);
+      }
+    };
+
+    fetchAccounts();
+  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#1E1E2C" }}>
-      <ScrollView style={styles.container}>
-        {/* Yatay kayan kartlar */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.cardsScroll}
-          contentContainerStyle={{ paddingHorizontal: 10 }}
-        >
-          {cards.map((card, index) => (
-            <View
-              key={index}
-              style={[styles.card, { backgroundColor: card.bgColor }]}
-            >
-              <Text style={styles.cardIcon}>{card.icon}</Text>
-              <Text style={styles.cardTitle}>{card.title}</Text>
-              <Text style={styles.cardAmount}>{card.amount}</Text>
-              <Text
-                style={[
-                  styles.cardChange,
-                  { color: card.change.includes("+") ? "#4CAF50" : "#F44336" },
-                ]}
-              >
-                {card.change} son 7 gün
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
-
-        {/* Hızlı işlemler */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionText}>Gönder</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionText}>Al</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionText}>Geçmiş</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Son işlemler */}
-        <View style={styles.transactions}>
-          <Text style={styles.sectionTitle}>Son İşlemler</Text>
-
-          <View style={styles.transactionItem}>
-            <Text style={styles.transactionTitle}>Elektrik Faturası</Text>
-            <Text style={styles.transactionAmountNegative}>-₺200</Text>
+      {/* Yatay hesap kartları */}
+      <FlatList
+        data={accounts}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) => item._id}
+        contentContainerStyle={{ paddingHorizontal: 10, marginTop: 20 }}
+        renderItem={({ item, index }) => (
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor:
+                  item.transactions?.filter((trs: any) => trs.type === "income")
+                    .length > 0
+                    ? "green"
+                    : "red",
+                borderWidth: activeIndex === index ? 2 : 0,
+                borderColor: "#fff",
+              },
+            ]}
+          >
+            <Text style={styles.cardIcon}>💰</Text>
+            <Text style={styles.cardTitle}>{item.name}</Text>
+            <Text style={styles.cardAmount}>
+              {item.balance} {item.currency}
+            </Text>
           </View>
+        )}
+        onMomentumScrollEnd={(ev) => {
+          const newIndex = Math.round(
+            ev.nativeEvent.contentOffset.x / (width * 0.7 + 15)
+          );
+          setActiveIndex(newIndex);
+        }}
+      />
 
-          <View style={styles.transactionItem}>
-            <Text style={styles.transactionTitle}>Para Yatırma</Text>
-            <Text style={styles.transactionAmountPositive}>+₺1,000</Text>
-          </View>
+      {/* Altında transaction listesi */}
+      <View style={styles.transactions}>
+        <Text style={styles.sectionTitle}>Son İşlemler</Text>
 
-          <View style={styles.transactionItem}>
-            <Text style={styles.transactionTitle}>Kira</Text>
-            <Text style={styles.transactionAmountNegative}>-₺2,500</Text>
-          </View>
-        </View>
-      </ScrollView>
+        {!activeAccount ? (
+          <Text style={{ color: "#fff", textAlign: "center" }}>
+            Yükleniyor...
+          </Text>
+        ) : activeAccount.transactions?.length === 0 ? (
+          <Text style={{ color: "#fff", textAlign: "center" }}>
+            Henüz işlem yok
+          </Text>
+        ) : (
+          <FlatList
+            data={activeAccount?.transactions || []}
+            keyExtractor={(item) => item._id}
+            renderItem={({ item }) => (
+              <View style={styles.transactionItem}>
+                <Text style={styles.transactionTitle}>{item.description}</Text>
+                <Text
+                  style={
+                    item.type === "income"
+                      ? styles.transactionAmountPositive
+                      : styles.transactionAmountNegative
+                  }
+                >
+                  {item.type === "income" ? "+" : "-"}
+                  {item.amount} {activeAccount.currency}
+                </Text>
+              </View>
+            )}
+          />
+        )}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#1E1E2C", padding: 20 },
-
-  cardsScroll: {
-    marginBottom: 30,
-  },
   card: {
     width: width * 0.7,
-    height: 200, // yükseklik artırıldı
+    height: 200,
     borderRadius: 16,
     padding: 20,
     marginRight: 15,
@@ -129,22 +134,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 5,
   },
-  cardChange: { fontSize: 12, fontWeight: "500" },
 
-  quickActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 30,
-  },
-  actionButton: {
-    backgroundColor: "#333",
-    borderRadius: 12,
-    paddingVertical: 15,
-    paddingHorizontal: 25,
-  },
-  actionText: { color: "#fff", fontWeight: "bold" },
-
-  transactions: { marginBottom: 30 },
+  transactions: { flex: 1, paddingHorizontal: 20 },
   sectionTitle: {
     color: "#fff",
     fontSize: 18,
@@ -159,15 +150,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 10,
   },
-  transactionTitle: {
-    color: "#fff",
-  },
-  transactionAmountPositive: {
-    color: "#4CAF50",
-    fontWeight: "bold",
-  },
-  transactionAmountNegative: {
-    color: "#F44336",
-    fontWeight: "bold",
-  },
+  transactionTitle: { color: "#fff" },
+  transactionAmountPositive: { color: "#4CAF50", fontWeight: "bold" },
+  transactionAmountNegative: { color: "#F44336", fontWeight: "bold" },
+  cardChange: { fontSize: 12, fontWeight: "500", color: "white" },
+  cardIconWrapper: { marginBottom: 10 },
 });

@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { config } from "../config";
+import { config } from "../../services/config";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
