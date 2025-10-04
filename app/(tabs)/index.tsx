@@ -1,98 +1,173 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const { width } = Dimensions.get("window");
 
-export default function HomeScreen() {
+export default function Home() {
+  const cards = [
+    {
+      title: "Toplam Bakiye",
+      amount: "₺12,345.67",
+      change: "+5%",
+      icon: "💰",
+      bgColor: "#174e8cff",
+    },
+    {
+      title: "Toplam Harcama",
+      amount: "₺3,200",
+      change: "-2%",
+      icon: "🛒",
+      bgColor: "#790d06ff",
+    },
+    {
+      title: "Toplam Gelir",
+      amount: "₺15,500",
+      change: "+10%",
+      icon: "💳",
+      bgColor: "#125f15ff",
+    },
+  ];
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#1E1E2C" }}>
+      <ScrollView style={styles.container}>
+        {/* Yatay kayan kartlar */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.cardsScroll}
+          contentContainerStyle={{ paddingHorizontal: 10 }}
+        >
+          {cards.map((card, index) => (
+            <View
+              key={index}
+              style={[styles.card, { backgroundColor: card.bgColor }]}
+            >
+              <Text style={styles.cardIcon}>{card.icon}</Text>
+              <Text style={styles.cardTitle}>{card.title}</Text>
+              <Text style={styles.cardAmount}>{card.amount}</Text>
+              <Text
+                style={[
+                  styles.cardChange,
+                  { color: card.change.includes("+") ? "#4CAF50" : "#F44336" },
+                ]}
+              >
+                {card.change} son 7 gün
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        {/* Hızlı işlemler */}
+        <View style={styles.quickActions}>
+          <TouchableOpacity style={styles.actionButton}>
+            <Text style={styles.actionText}>Gönder</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton}>
+            <Text style={styles.actionText}>Al</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton}>
+            <Text style={styles.actionText}>Geçmiş</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Son işlemler */}
+        <View style={styles.transactions}>
+          <Text style={styles.sectionTitle}>Son İşlemler</Text>
+
+          <View style={styles.transactionItem}>
+            <Text style={styles.transactionTitle}>Elektrik Faturası</Text>
+            <Text style={styles.transactionAmountNegative}>-₺200</Text>
+          </View>
+
+          <View style={styles.transactionItem}>
+            <Text style={styles.transactionTitle}>Para Yatırma</Text>
+            <Text style={styles.transactionAmountPositive}>+₺1,000</Text>
+          </View>
+
+          <View style={styles.transactionItem}>
+            <Text style={styles.transactionTitle}>Kira</Text>
+            <Text style={styles.transactionAmountNegative}>-₺2,500</Text>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: { flex: 1, backgroundColor: "#1E1E2C", padding: 20 },
+
+  cardsScroll: {
+    marginBottom: 30,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  card: {
+    width: width * 0.7,
+    height: 200, // yükseklik artırıldı
+    borderRadius: 16,
+    padding: 20,
+    marginRight: 15,
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 5,
+    elevation: 6,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  cardIcon: { fontSize: 28, marginBottom: 10 },
+  cardTitle: { color: "#fff", fontSize: 16, marginBottom: 5 },
+  cardAmount: {
+    color: "#fff",
+    fontSize: 28,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  cardChange: { fontSize: 12, fontWeight: "500" },
+
+  quickActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 30,
+  },
+  actionButton: {
+    backgroundColor: "#333",
+    borderRadius: 12,
+    paddingVertical: 15,
+    paddingHorizontal: 25,
+  },
+  actionText: { color: "#fff", fontWeight: "bold" },
+
+  transactions: { marginBottom: 30 },
+  sectionTitle: {
+    color: "#fff",
+    fontSize: 18,
+    marginBottom: 15,
+    fontWeight: "bold",
+  },
+  transactionItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#2A2A3A",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  transactionTitle: {
+    color: "#fff",
+  },
+  transactionAmountPositive: {
+    color: "#4CAF50",
+    fontWeight: "bold",
+  },
+  transactionAmountNegative: {
+    color: "#F44336",
+    fontWeight: "bold",
   },
 });
